@@ -5,11 +5,12 @@ public static $defaultConf = array(
     'sleepMicrosecs' => 1000
     // , 'verbose' => 'htmlspecialchars'
     , 'passSymbolsToShow' => 4
-    , 'periodDays' => 6
     , 'host' => 'api.host'
     , 'api_key' => null
     , 'login' => null
     , 'password' => null
+    , 'baseurl' => ''
+    , 'http' => False
     );  
 
 
@@ -28,7 +29,15 @@ public function authenticate(){
 
 public function queryAPI($query, $url = '/', $method = 'POST'){
 
-    $url = (preg_match('/^http/', $url) ? $url : "https://{$this->conf['host']}{$url}");
+    $s = (!preg_match('/^local/', $this->conf['host']) && !$this->conf['http'] ? 's' : '');
+    $url = (preg_match('/^http/', $url) ? $url : "http{$s}://{$this->conf['host']}{$this->conf['baseurl']}{$url}");
+
+    if ($method==='GET' && $query) {
+        if(is_array($query)){
+            $query = http_build_query($query);
+        }
+        $url .= (!preg_match('/^\?/', $query) ? '?' : '').$query;
+    }
 
     $this->v("URL: {$url}");
 
@@ -47,6 +56,8 @@ public function queryAPI($query, $url = '/', $method = 'POST'){
     else {
         $arrCURLOptions[CURLOPT_CUSTOMREQUEST] = $method;
     }
+
+    $this->v("CURL Options: ".var_export($arrCURLOptions, true));
 
     @curl_setopt_array($ch, $arrCURLOptions);
 
@@ -113,8 +124,7 @@ public function prepareCURLOptions($query){
  */
 public function processResult($result, $curlinfo = null){
 
-    if($this->flagVerboseCURLInfo)
-        $this->v('CURL info: '.var_export($curlinfo, true));
+    $this->v('CURL info: '.var_export($curlinfo, true));
 
     if($curlinfo['http_code']!=200){
         throw new eiseAPIClientException('Error processing result (len '.strlen($result).' bytes): '.$result, $curlinfo['http_code'], NULL, $curlinfo);
