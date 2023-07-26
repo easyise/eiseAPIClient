@@ -27,10 +27,9 @@ public function authenticate(){
 
 }
 
-public function queryAPI($query, $url = '/', $method = 'POST'){
+public function queryAPI($query, $url = '/', $method = 'POST', $format = 'application/x-www-form-urlencoded'){
 
-    $s = (!preg_match('/^local/', $this->conf['host']) && !$this->conf['http'] ? 's' : '');
-    $url = (preg_match('/^http/', $url) ? $url : "http{$s}://{$this->conf['host']}{$this->conf['baseurl']}{$url}");
+    $url = $this->getFullURL($url);
 
     if ($method==='GET' && $query) {
         if(is_array($query)){
@@ -45,16 +44,31 @@ public function queryAPI($query, $url = '/', $method = 'POST'){
 
     $arrCURLOptions = $this->prepareCURLOptions( $query );
 
-    if($method==='POST'){
-        $arrCURLOptions[CURLOPT_POST] =  true; 
-        $arrCURLOptions[CURLOPT_POSTFIELDS] = json_encode($query) ;
-        $arrCURLOptions[CURLOPT_HTTPHEADER] = array_merge($arrCURLOptions[CURLOPT_HTTPHEADER], array('Accept: application/json'));
-        $arrCURLOptions[CURLOPT_HTTPHEADER] = array_merge($arrCURLOptions[CURLOPT_HTTPHEADER], array('Content-Type: application/json'));
-        $arrCURLOptions[CURLOPT_HTTPHEADER] = array_merge($arrCURLOptions[CURLOPT_HTTPHEADER], array('Content-Length: '.strlen(json_encode($query))));
+    if(!in_array($method, ['GET', 'HEAD'])) {
 
-    } elseif( $method==='GET' ){}
-    else {
-        $arrCURLOptions[CURLOPT_CUSTOMREQUEST] = $method;
+        $arrCURLOptions[CURLOPT_POST] =  true; 
+
+        switch($format){
+            case 'application/json':
+                
+                $arrCURLOptions[CURLOPT_POSTFIELDS] = json_encode($query) ;
+                $arrCURLOptions[CURLOPT_HTTPHEADER] = array_merge($arrCURLOptions[CURLOPT_HTTPHEADER], array('Accept: application/json'));
+                $arrCURLOptions[CURLOPT_HTTPHEADER] = array_merge($arrCURLOptions[CURLOPT_HTTPHEADER], array('Content-Type: application/json'));
+                $arrCURLOptions[CURLOPT_HTTPHEADER] = array_merge($arrCURLOptions[CURLOPT_HTTPHEADER], array('Content-Length: '.strlen(json_encode($query))));
+
+            default:
+            
+                $q = http_build_query($query);
+                $arrCURLOptions[CURLOPT_POSTFIELDS] =  $q;
+                $arrCURLOptions[CURLOPT_HTTPHEADER] = array_merge($arrCURLOptions[CURLOPT_HTTPHEADER], array('Content-Type: application/x-www-form-urlencoded'));
+                $arrCURLOptions[CURLOPT_HTTPHEADER] = array_merge($arrCURLOptions[CURLOPT_HTTPHEADER], array('Content-Length: '.strlen($q)));
+        }
+
+        if($method!=='POST'){
+            $arrCURLOptions[CURLOPT_CUSTOMREQUEST] = $method;
+        }
+        
+
     }
 
     $this->v("CURL Options: ".var_export($arrCURLOptions, true));
@@ -92,13 +106,50 @@ public function queryAPI($query, $url = '/', $method = 'POST'){
     if($this->conf['verbose']){
         rewind($verbose);
         $verboseLog = stream_get_contents($verbose);
-        $this->v( "Verbose information:\n", htmlspecialchars($verboseLog), "\n" );
+        $this->v("Verbose information:\n", htmlspecialchars($verboseLog), "\n" );
     }
 
     $res = $this->processResult($result, $ci);
 
     return $res;
     
+}
+
+function getFullURL($url){
+
+    $s = (!preg_match('/^local/', $this->conf['host']) && !$this->conf['http'] ? 's' : '');
+
+    return (preg_match('/^http/', $url) ? $url : "http{$s}://{$this->conf['host']}{$this->conf['baseurl']}{$url}");
+}
+
+public function postFile($filepath, $mimetype, $filename, $url, $postFields=[], $conf=[]){
+
+    $defaultConf = ['file_field_name'=>'file'];
+
+    $conf = array_merge($defaultConf, $conf);
+
+    $url = $this->getFullURL($url);
+
+    $this->v("URL: {$url}");
+
+    $ch = curl_init($url);
+
+    $arrCURLOptions = $this->prepareCURLOptions( $query );
+
+    $arrCURLOptions[CURLOPT_VERBOSE] = 1;
+    // curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
+
+    $arrCURLOptions[CURLOPT_POST] = true;
+    $postFields[$conf["file_field_name"]] = new CURLFile($filepath, $mimetype, $filename);
+
+    $arrCURLOptions[CURLOPT_POSTFIELDS] = $postFields;
+
+    @curl_setopt_array($ch, $arrCURLOptions);
+
+    $result = curl_exec($ch);
+
+    return $result;
+
 }
 
 public function prepareCURLOptions($query){
