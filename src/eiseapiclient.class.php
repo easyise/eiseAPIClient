@@ -94,8 +94,9 @@ public function queryAPI($query, $url = '/', $method = 'POST', $format = 'applic
     $iAttempt = 0;
     $this->nAttempts = 3;
     while(!($result = curl_exec($ch)) && $iAttempt < $this->nAttempts) {
+        $error = curl_error($ch);
         $iAttempt++;
-        $this->v( "Attempt {$iAttempt} of {$this->nAttempts}...\r\n" );
+        $this->v( "Attempt {$iAttempt} of {$this->nAttempts}...{$error}\r\n" );
         usleep(2000000);
     }
 
