@@ -56,12 +56,16 @@ public function queryAPI($query, $url = '/', $method = 'POST', $format = 'applic
                 $arrCURLOptions[CURLOPT_HTTPHEADER] = array_merge($arrCURLOptions[CURLOPT_HTTPHEADER], array('Content-Type: application/json'));
                 $arrCURLOptions[CURLOPT_HTTPHEADER] = array_merge($arrCURLOptions[CURLOPT_HTTPHEADER], array('Content-Length: '.strlen(json_encode($query))));
 
+                break;
+
             default:
             
                 $q = http_build_query($query);
                 $arrCURLOptions[CURLOPT_POSTFIELDS] =  $q;
                 $arrCURLOptions[CURLOPT_HTTPHEADER] = array_merge($arrCURLOptions[CURLOPT_HTTPHEADER], array('Content-Type: application/x-www-form-urlencoded'));
                 $arrCURLOptions[CURLOPT_HTTPHEADER] = array_merge($arrCURLOptions[CURLOPT_HTTPHEADER], array('Content-Length: '.strlen($q)));
+
+                break;
         }
 
         if($method!=='POST'){
