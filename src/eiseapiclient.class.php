@@ -182,8 +182,8 @@ public function processResult($result, $curlinfo = null){
 
     $this->v('CURL info: '.var_export($curlinfo, true));
 
-    if($curlinfo['http_code']!=200){
-        throw new eiseAPIClientException('Error processing result (len '.strlen($result).' bytes): '.$result, $curlinfo['http_code'], NULL, $curlinfo);
+    if( floor($curlinfo['http_code'] / 100) != 2 ){
+        throw new eiseAPIClientException('Error processing result (len '.strlen($result).' bytes), HTTP code'.($curlinfo['http_code']).' '.$result, $curlinfo['http_code'], NULL, $curlinfo);
     }
 
     $this->v('Response text ('.strlen($result).' byte(s)): '.mb_substr($result, 0, 255)."\r\n\r\n");
