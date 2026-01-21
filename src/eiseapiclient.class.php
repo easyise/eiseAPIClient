@@ -14,7 +14,7 @@ public static $defaultConf = array(
     );  
 
 
-public function __construct($conf){
+public function __construct($conf=[]){
     
     $this->conf = array_merge(self::$defaultConf, $conf);
 
@@ -88,7 +88,7 @@ public function queryAPI($query, $url = '/', $method = 'POST', $format = 'applic
 
     }
 
-    if($this->conf['verbose']){
+    if(!empty($this->conf['verbose'])){
         curl_setopt($ch, CURLOPT_VERBOSE, true);
         $verbose = fopen('php://temp', 'w+');
         curl_setopt($ch, CURLOPT_STDERR, $verbose);
@@ -108,7 +108,7 @@ public function queryAPI($query, $url = '/', $method = 'POST', $format = 'applic
 
     curl_close($ch);
 
-    if($this->conf['verbose']){
+    if(!empty($this->conf['verbose'])){
         rewind($verbose);
         $verboseLog = stream_get_contents($verbose);
         $this->v("Verbose information:\n", htmlspecialchars($verboseLog), "\n" );
@@ -220,7 +220,7 @@ public function processResult($result, $curlinfo = null){
  * @return void
  */
 protected function v($string){
-    if($this->conf['verbose']){
+    if(!empty($this->conf['verbose'])){
         echo ($this->conf['verbose']==='htmlspecialchars' ? '<br>'.htmlspecialchars(Date('Y-m-d H:i:s').': '.$string) : "\r\n".Date('Y-m-d H:i:s').': '.trim($string));
         ob_flush();
         flush();
