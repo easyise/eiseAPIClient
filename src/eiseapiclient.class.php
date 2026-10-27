@@ -149,9 +149,19 @@ public function postFile($filepath, $mimetype, $filename, $url, $postFields=[], 
 
     $arrCURLOptions[CURLOPT_POSTFIELDS] = $postFields;
 
+    // die('<pre>'.var_export($arrCURLOptions, true).'</pre>');
+
     @curl_setopt_array($ch, $arrCURLOptions);
 
     $result = curl_exec($ch);
+
+    $info = curl_getinfo($ch);
+
+    if($info['http_code'] != 200){
+        throw new eiseAPIClientException("HTTP error: ".$info['http_code'].($result ? " Response: ".$result : ""), $info['http_code'], NULL, $info);
+    }
+
+    // $this->v('CURL debug: '.var_export(curl_getinfo($ch), true).' Error: '.curl_error($ch));
 
     return $result;
 
