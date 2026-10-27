@@ -139,7 +139,7 @@ public function postFile($filepath, $mimetype, $filename, $url, $postFields=[], 
 
     $ch = curl_init($url);
 
-    $arrCURLOptions = $this->prepareCURLOptions( $query );
+    $arrCURLOptions = $this->prepareCURLOptions( null );
 
     $arrCURLOptions[CURLOPT_VERBOSE] = 1;
     // curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
@@ -198,6 +198,7 @@ public function processResult($result, $curlinfo = null){
     /**
      * Try to parse it as XML and return object if succeded
      */
+    $oXML = null;
     try {
         $oXML = @new SimpleXMLElement($result);
     }catch(Exception $e){}
